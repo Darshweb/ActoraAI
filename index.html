@@ -583,11 +583,11 @@
 
     setInterval(() => {
         const now = new Date();
-        document.getElementById('clock').innerText = "ACTORA SYSTEM TIME: " + now.toLocaleTimeString();
+        document.getElementById('clock').innerText = "TIME: " + now.toLocaleTimeString();
         if(document.getElementById('greeting').innerText.includes("Initializing")) {
             const h = now.getHours();
             const g = h<12?"Good Morning":h<18?"Good Afternoon":"Good Evening";
-            document.getElementById('greeting').innerText = `${g}, I am ACTORA AI. Intelligent. Offline. Ready.`;
+            document.getElementById('greeting').innerText = `${g}, I am ACTORA AI`;
             speak(`I am Actora. How can I help?`);
         }
     }, 1000);
