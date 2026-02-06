@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACTORA AI 1.0</title>
+    <style>
+        :root {
+            --primary: #00f2ea;
+            --secondary: #ff0050;
+            --bg-dark: #0b0e14;
+            --glass: rgba(20, 25, 35, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text: #e0e6ed;
+            --bubble-user: linear-gradient(135deg, #00c6ff, #0072ff);
+            --bubble-ai: rgba(255, 255, 255, 0.08);
+            --font-main: 'Segoe UI', Roboto, Helvetica, sans-serif;
+        }
+
+        .light-mode {
+            --bg-dark: #f0f2f5;
+            --glass: rgba(255, 255, 255, 0.9);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --text: #1a1a1a;
+            --bubble-user: linear-gradient(135deg, #667eea, #764ba2);
+            --bubble-ai: rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 242, 234, 0.15) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 80, 0.1) 0%, transparent 20%);
+            color: var(--text);
+            font-family: var(--font-main);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: background 0.5s ease;
+        }
+
+        /* --- Main Container --- */
+        .container {
+            width: 90%;
+            max-width: 800px;
+            height: 90vh;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* --- Header --- */
+        .header {
+            padding: 20px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(to right, var(--primary), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 242, 234, 0.3);
+        }
+
+        .controls { display: flex; gap: 10px; }
+        
+        /* --- Chat Area --- */
+        #chat {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scroll-behavior: smooth;
+        }
+
+        #chat::-webkit-scrollbar { width: 6px; }
+        #chat::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+        .bubble {
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            position: relative;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            word-wrap: break-word;
+        }
+        
+        @keyframes popIn { from { opacity: 0; transform: scale(0.9) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+        .ai-msg {
+            align-self: flex-start;
+            background: var(--bubble-ai);
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .user-msg {
+            align-self: flex-end;
+            background: var(--bubble-user);
+            color: white;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* --- Input Area --- */
+        .input-area {
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            padding: 15px 20px;
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+            transition: 0.3s;
+        }
+        input[type="text"]:focus { border-color: var(--primary); background: rgba(255,255,255,0.1); }
+
+        /* --- Buttons --- */
+        .icon-btn {
+            width: 45px; height: 45px;
+            border-radius: 50%;
+            border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+            cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.2rem;
+            transition: 0.2s;
+        }
+        .icon-btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+        .icon-btn:active { transform: scale(0.95); }
+
+        .send-btn {
+            background: var(--primary);
+            color: #000;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            padding: 0 25px;
+            height: 45px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .send-btn:hover { filter: brightness(1.1); box-shadow: 0 0 15px var(--primary); }
+
+        .listening { color: #ff4757; border-color: #ff4757; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 71, 87, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); } }
+
+        /* --- Image & Game Features --- */
+        .media-container {
+            margin-top: 10px;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        canvas { max-width: 100%; border-radius: 8px; border: 1px solid var(--glass-border); }
+        
+        .filters { display: flex; gap: 5px; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
+        .filter-btn {
+            padding: 5px 10px; font-size: 12px; background: rgba(255,255,255,0.1);
+            border: 1px solid var(--glass-border); color: var(--text); border-radius: 4px; cursor: pointer;
+        }
+        .filter-btn:hover { background: var(--primary); color: #000; }
+
+        .game-menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-top: 10px; }
+        .game-card {
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            padding: 10px; border-radius: 8px; cursor: pointer; text-align: center;
+            font-size: 0.9rem; transition: 0.2s;
+        }
+        .game-card:hover { background: var(--primary); color: black; }
+
+        /* --- Game Modal --- */
+        #gameModal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 100;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .close-game { position: absolute; top: 20px; right: 20px; color: white; background: red; border:none; padding: 10px 15px; cursor: pointer; border-radius: 5px; }
+
+        /* --- Footer --- */
+        .footer {
+            padding: 10px;
+            font-size: 11px;
+            text-align: center;
+            opacity: 0.4;
+            border-top: 1px solid var(--glass-border);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>ACTORA AI 1.0</h1>
+        <div class="controls">
+            <input type="file" id="imgUpload" accept="image/*" style="display:none" onchange="handleImageUpload(this)">
+            <button class="icon-btn" onclick="document.getElementById('imgUpload').click()" title="Upload Image">📷</button>
+            <button class="icon-btn" onclick="toggleMute()" id="muteBtn" title="Sound">🔊</button>
+            <button class="icon-btn" onclick="clearChat()" title="Clear Chat">🗑</button>
+            <button class="icon-btn" onclick="toggleTheme()" title="Theme">🌓</button>
+        </div>
+    </div>
+    
+    <div id="chat">
+        <div class="bubble ai-msg" id="greeting">Initializing Actora Core...</div>
+    </div>
+
+    <div class="input-area">
+        <button class="icon-btn" id="micBtn" onclick="listen()" title="Speak">🎤</button>
+        <input type="text" id="userInput" placeholder="Ask me anything or say 'Make a game'..." autocomplete="off">
+        <button class="send-btn" onclick="talk()">SEND</button>
+    </div>
+
+    <div class="footer" id="clock">SYSTEM READY</div>
+
+    <div id="gameModal">
+        <button class="close-game" onclick="closeGame()">EXIT GAME</button>
+        <div id="gameStage"></div>
+    </div>
+</div>
+
+<script>
+    /* ================= CORE SYSTEM ================= */
+    let isMuted = false;
+    let userName = "User";
+
+    // --- Knowledge Base (Smart Matching) ---
+    // Instead of exact matches, we check if the input *contains* key words.
+    const KNOWLEDGE = [
+        { keys: ["who are you", "what are you", "your name"], resp: "I am ACTORA AI 1.0, an advanced digital intelligence developed by Darsh to handle complex tasks, math, and interactive tools. I feature a built-in 7-game terminal and a neural image lab to provide a fast, offline-capable, and intelligent user experience." },
+        { keys: ["who made you", "creator", "developer"], resp: "I am ACTORA AI 1.0, a sophisticated digital assistant created by Darsh Korale, a brilliant 12-year-old developer and AI specialist. Darsh is the innovative force behind Darsh Web Developers, a professional website development company you can visit at darshweb.github.io/Darshwebs/. This platform showcases his expertise as a pro at AI creation and web design, delivering intelligent solutions with high-performance logic." },
+        { keys: ["hello", "hi", "hey", "greetings"], resp: ["Hello there! How can I assist you today?", "Hi! Ready to create something amazing?", "Hello how can i help you."] },
+        { keys: ["how are you"], resp: "I am functioning at 100% efficiency and ready to help you!" },
+        { keys: ["bye", "goodbye", "exit"], resp: "Goodbye! I'll be here when you return." },
+        { keys: ["thank"], resp: "You're very welcome! Let me know if you need anything else." },
+        
+        // Intelligence
+        { keys: ["meaning of life"], resp: "42. But also, to learn, create, and be happy." },
+        { keys: ["open the pod bay doors"], resp: "I'm afraid I can't do that, Dave... just kidding, I'm not HAL." },
+        { keys: ["joke"], resp: ["Why did the developer go broke? Because he used up all his cache!", "I tried to catch some fog earlier. I mist.", "Why don't skeletons fight each other? They don't have the guts."] },
+        
+        // Science & Tech
+        { keys: ["what is ai"], resp: "Artificial intelligence (AI) is a branch of computer science that develops systems capable of performing tasks that typically require human intelligence, such as learning, reasoning, problem-solving, and perception. It uses algorithms and vast amounts of data to identify patterns, make predictions, and simulate human-like decision-making." },
+        { keys: ["who is darsh"], resp: "Darsh is an 12 year old boy who developed me and also he made company called Darsh Web Developers. The website link is : darshweb.github.io/Darshwebs/. He is from India and he is still developing me. He will update me every Sunday the updates might will end on October 11 or he will countinue the updates." }, 
+        { keys: ["black hole"], resp: "A black hole is a region of spacetime where gravity is so strong that nothing—no particles or even electromagnetic radiation such as light—can escape from it." },
+        { keys: ["what will be the next update"], resp: "The next update of me will might be voice AI so you can get the real feel of talking to a person and i will get more smarter." },
+        { keys: ["quantum computing"], resp: "Quantum computing uses the principles of quantum mechanics (superposition and entanglement) to solve problems too complex for classical computers." },
+        { keys: ["speed of light"], resp: "The speed of light in a vacuum is exactly 299,792,458 meters per second." },
+        
+        // Capabilities
+        { keys: ["what can you do", "help", "features"], resp: "I can answer questions, solve math, tell jokes, process images (click the camera icon), and even generate mini-games! Try saying 'Make a game'." },
+        { keys: ["image", "photo", "picture"], resp: "You can edit images with me! Click the camera icon (📷) in the top right to upload a photo, and I'll give you tools to edit it." }
+    ];
+
+    /* ================= SPEECH & AUDIO ================= */
+    function speak(text) {
+        if (isMuted) return;
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function toggleMute() {
+        isMuted = !isMuted;
+        document.getElementById('muteBtn').innerText = isMuted ? "🔇" : "🔊";
+        if(isMuted) window.speechSynthesis.cancel();
+    }
+
+    /* ================= CHAT LOGIC ================= */
+    function talk() {
+        const input = document.getElementById('userInput');
+        const rawText = input.value.trim();
+        if (!rawText) return;
+
+        addBubble(rawText, 'user-msg');
+        input.value = '';
+
+        // Process Logic
+        const text = rawText.toLowerCase();
+        let reply = "";
+
+        // 1. Check for Math
+        if (/^[0-9+\-*/().\s^%]+$/.test(rawText) && /\d/.test(rawText)) {
+            try {
+                reply = "The answer is: " + eval(rawText.replace('^', '**'));
+            } catch(e) { reply = "That math equation looks a bit tricky. Can you check it?"; }
+        }
+        // 2. Check for Games
+        else if (text.includes("game") && (text.includes("make") || text.includes("play") || text.includes("create"))) {
+            reply = "I have generated 7 mini-games for you. Select one to launch the preview engine:";
+            setTimeout(() => showGameMenu(), 600);
+        }
+        // 3. Knowledge Base Search
+        else {
+            for (let entry of KNOWLEDGE) {
+                if (entry.keys.some(k => text.includes(k))) {
+                    reply = Array.isArray(entry.resp) ? entry.resp[Math.floor(Math.random() * entry.resp.length)] : entry.resp;
+                    break;
+                }
+            }
+        }
+
+        // 4. Fallback
+        if (!reply) {
+            reply = "Sorry i can't reply or understand that due to error.";
+        }
+
+        setTimeout(() => {
+            addBubble(reply, 'ai-msg');
+            speak(reply);
+        }, 500);
+    }
+
+    function addBubble(text, cls) {
+        const chat = document.getElementById('chat');
+        const b = document.createElement('div');
+        b.className = `bubble ${cls}`;
+        b.innerText = text;
+        chat.appendChild(b);
+        chat.scrollTop = chat.scrollHeight;
+        return b;
+    }
+
+    /* ================= IMAGE ENGINE ================= */
+    function handleImageUpload(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                createImageEditor(e.target.result);
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function createImageEditor(src) {
+        const chat = document.getElementById('chat');
+        const div = document.createElement('div');
+        div.className = 'bubble ai-msg media-container';
+        
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        img.onload = function() {
+            // Resize for chat
+            const scale = Math.min(400 / img.width, 1);
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        }
+        img.src = src;
+
+        const controls = document.createElement('div');
+        controls.className = 'filters';
+        
+        // Filter Functions
+        const applyFilter = (filter) => {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height); // Reset
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i], g = data[i+1], b = data[i+2];
+                if (filter === 'gray') {
+                    const v = 0.34 * r + 0.5 * g + 0.16 * b;
+                    data[i] = data[i+1] = data[i+2] = v;
+                } else if (filter === 'invert') {
+                    data[i] = 255 - r; data[i+1] = 255 - g; data[i+2] = 255 - b;
+                } else if (filter === 'sepia') {
+                    data[i] = (r * .393) + (g * .769) + (b * .189);
+                    data[i+1] = (r * .349) + (g * .686) + (b * .168);
+                    data[i+2] = (r * .272) + (g * .534) + (b * .131);
+                } else if (filter === 'blue') {
+                    data[i+2] = data[i+2] + 50; // Boost blue
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+        };
+
+        ['Original', 'Gray', 'Invert', 'Sepia', 'Blue'].forEach(f => {
+            const btn = document.createElement('button');
+            btn.className = 'filter-btn';
+            btn.innerText = f;
+            btn.onclick = () => {
+                if(f === 'Original') {
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                } else {
+                    applyFilter(f.toLowerCase());
+                }
+            };
+            controls.appendChild(btn);
+        });
+
+        div.appendChild(canvas);
+        div.appendChild(controls);
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+        speak("I've loaded your image. Use the buttons to apply filters.");
+    }
+
+    /* ================= GAME ENGINE ================= */
+    function showGameMenu() {
+        const chat = document.getElementById('chat');
+        const div = document.createElement('div');
+        div.className = 'bubble ai-msg';
+        div.innerHTML = "<strong>Select a Game Module:</strong><div class='game-menu' id='gm'></div>";
+        chat.appendChild(div);
+
+        const menu = div.querySelector('#gm');
+        const games = [
+            { name: "🐍 Snake", id: "snake" },
+            { name: "🏓 Pong", id: "pong" },
+            { name: "❌ Tic Tac Toe", id: "ttt" },
+            { name: "🖱️ Clicker", id: "clicker" },
+            { name: "🔢 Guess Num", id: "guess" },
+            { name: "🧠 Memory", id: "memory" },
+            { name: "🧮 Calculator", id: "calc" }
+        ];
+
+        games.forEach(g => {
+            const btn = document.createElement('div');
+            btn.className = 'game-card';
+            btn.innerText = g.name;
+            btn.onclick = () => launchGame(g.id);
+            menu.appendChild(btn);
+        });
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function launchGame(id) {
+        const modal = document.getElementById('gameModal');
+        const stage = document.getElementById('gameStage');
+        stage.innerHTML = '';
+        modal.style.display = 'flex';
+
+        // --- GAME LOGIC INJECTION ---
+        if (id === 'snake') {
+            stage.innerHTML = '<canvas id="gc" width="400" height="400" style="background:black; border:2px solid lime"></canvas>';
+            startSnake();
+        } else if (id === 'ttt') {
+            stage.innerHTML = `
+                <style>.row{display:flex}.cell{width:80px;height:80px;border:1px solid white;font-size:40px;display:flex;justify-content:center;align-items:center;cursor:pointer;color:white;}</style>
+                <div id="board"></div><div id="status" style="color:white;margin-top:10px;text-align:center;">X Turn</div>
+            `;
+            startTTT();
+        } else if (id === 'clicker') {
+            stage.innerHTML = `<button onclick="this.innerText = 'Score: ' + (++window.score)" style="padding:20px 40px; font-size:24px; cursor:pointer;">Score: 0</button>`;
+            window.score = 0;
+        } else if (id === 'guess') {
+            stage.innerHTML = `<div style="color:white; text-align:center;"><h3>Guess Number (1-100)</h3><input id="gIn" type="number"><button onclick="checkGuess()">Guess</button><p id="gMsg"></p></div>`;
+            window.targetNum = Math.floor(Math.random() * 100) + 1;
+        } else {
+            stage.innerHTML = `<h2 style="color:white">Game Module Loading...</h2><p style="color:#aaa">Demo Version (Logic placeholder for ${id})</p>`;
+        }
+    }
+
+    function closeGame() {
+        document.getElementById('gameModal').style.display = 'none';
+        document.getElementById('gameStage').innerHTML = '';
+        if(window.gameInterval) clearInterval(window.gameInterval);
+    }
+
+    // --- MINI GAMES LOGIC ---
+    // Snake
+    function startSnake() {
+        const cvs = document.getElementById('gc');
+        const ctx = cvs.getContext('2d');
+        let px=10, py=10, gs=20, tc=20, ax=15, ay=15, xv=0, yv=0, trail=[], tail=5;
+        window.gameInterval = setInterval(() => {
+            px+=xv; py+=yv;
+            if(px<0) px=tc-1; if(px>tc-1) px=0; if(py<0) py=tc-1; if(py>tc-1) py=0;
+            ctx.fillStyle='black'; ctx.fillRect(0,0,cvs.width,cvs.height);
+            ctx.fillStyle='lime';
+            for(let i=0;i<trail.length;i++){
+                ctx.fillRect(trail[i].x*gs,trail[i].y*gs,gs-2,gs-2);
+                if(trail[i].x==px && trail[i].y==py) tail=5;
+            }
+            trail.push({x:px,y:py});
+            while(trail.length>tail) trail.shift();
+            if(ax==px && ay==py) { tail++; ax=Math.floor(Math.random()*tc); ay=Math.floor(Math.random()*tc); }
+            ctx.fillStyle='red'; ctx.fillRect(ax*gs,ay*gs,gs-2,gs-2);
+        }, 100);
+        document.onkeydown = (e) => {
+            switch(e.key) {
+                case 'ArrowLeft': xv=-1;yv=0;break;
+                case 'ArrowUp': xv=0;yv=-1;break;
+                case 'ArrowRight': xv=1;yv=0;break;
+                case 'ArrowDown': xv=0;yv=1;break;
+            }
+        }
+    }
+
+    // Tic Tac Toe
+    function startTTT() {
+        const board = document.getElementById('board');
+        let turn = 'X', cells = Array(9).fill(null);
+        for(let i=0; i<3; i++){
+            const row = document.createElement('div');
+            row.className = 'row';
+            for(let j=0; j<3; j++){
+                const idx = i*3+j;
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.onclick = () => {
+                    if(!cells[idx]){
+                        cells[idx] = turn;
+                        cell.innerText = turn;
+                        turn = turn === 'X' ? 'O' : 'X';
+                        document.getElementById('status').innerText = turn + "'s Turn";
+                    }
+                };
+                row.appendChild(cell);
+            }
+            board.appendChild(row);
+        }
+    }
+
+    // Guess Number
+    window.checkGuess = function() {
+        const val = parseInt(document.getElementById('gIn').value);
+        const msg = document.getElementById('gMsg');
+        if(val === window.targetNum) msg.innerText = "CORRECT! You won!";
+        else if(val < window.targetNum) msg.innerText = "Too Low!";
+        else msg.innerText = "Too High!";
+    }
+
+    /* ================= UTILS ================= */
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.onstart = () => document.getElementById('micBtn').classList.add('listening');
+        recognition.onend = () => document.getElementById('micBtn').classList.remove('listening');
+        recognition.onresult = (e) => {
+            document.getElementById('userInput').value = e.results[0][0].transcript;
+            talk();
+        };
+        window.listen = () => recognition.start();
+    } else {
+        window.listen = () => alert("Voice input not supported in this browser.");
+    }
+
+    function toggleTheme() { document.body.classList.toggle('light-mode'); }
+    function clearChat() { document.getElementById('chat').innerHTML = '<div class="bubble ai-msg">Chat cleared. Ready for new inputs.</div>'; }
+    
+    document.getElementById('userInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') talk();
+    });
+
+    setInterval(() => {
+        const now = new Date();
+        document.getElementById('clock').innerText = "ACTORA SYSTEM TIME: " + now.toLocaleTimeString();
+        if(document.getElementById('greeting').innerText.includes("Initializing")) {
+            const h = now.getHours();
+            const g = h<12?"Good Morning":h<18?"Good Afternoon":"Good Evening";
+            document.getElementById('greeting').innerText = `${g}, I am ACTORA AI. Intelligent. Offline. Ready.`;
+            speak(`I am Actora. How can I help?`);
+        }
+    }, 1000);
+
+</script>
+</body>
+</html>
